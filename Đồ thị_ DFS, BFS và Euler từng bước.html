@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Đồ thị: DFS, BFS và Euler từng bước</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&display=swap"
+    />
+    <style>
+      :root {
+        --bg: #f6f8fb;
+        --grid: #e3e9f1;
+        --card: #fff;
+        --ink: #16202e;
+        --mut: #5a6778;
+        --line: #cdd6e2;
+        --ac: #2456d6;
+        --ac2: #e5531b;
+        --soft: #e4ecff;
+        --onac: #fff;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #10151d;
+          --grid: #19212d;
+          --card: #182030;
+          --ink: #e8edf5;
+          --mut: #98a5b8;
+          --line: #33415a;
+          --ac: #7aa2ff;
+          --ac2: #ff905e;
+          --soft: #22345c;
+          --onac: #0d1320;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #10151d;
+        --grid: #19212d;
+        --card: #182030;
+        --ink: #e8edf5;
+        --mut: #98a5b8;
+        --line: #33415a;
+        --ac: #7aa2ff;
+        --ac2: #ff905e;
+        --soft: #22345c;
+        --onac: #0d1320;
+        color-scheme: dark;
+      }
+      :root {
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env6(safe-area-inset-bottom, 0px);
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: inherit;
+      }
+      body {
+        margin: 0;
+        background:
+          var(--bg) linear-gradient(var(--grid) 1px, transparent 1px) 0 0/28px
+            28px,
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/28px 28px;
+        color: var(--ink);
+        font:
+          16px/1.55 "Be Vietnam Pro",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 20px 16px 48px;
+      }
+      h1 {
+        font-size: clamp(1.5rem, 4vw, 2.1rem);
+        font-weight: 800;
+        margin: 8px 0 4px;
+        letter-spacing: -0.01em;
+      }
+      h2 {
+        font-size: 1.2rem;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 0 0 10px;
+        max-width: 70ch;
+      }
+      .lead {
+        color: var(--mut);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        margin: 14px 0;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .row > * {
+        flex: 1 1 300px;
+        min-width: 0;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-right: 8px;
+      }
+      button,
+      select {
+        font: inherit;
+        color: var(--ink);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      .seg button {
+        border: 0;
+        border-radius: 0;
+        border-right: 1px solid var(--line);
+      }
+      .seg button:last-child {
+        border-right: 0;
+      }
+      button[aria-pressed="true"] {
+        background: var(--ac);
+        color: var(--onac);
+        font-weight: 600;
+      }
+      button:focus-visible,
+      select:focus-visible,
+      td.c:focus-visible {
+        outline: 3px solid var(--ac2);
+        outline-offset: 2px;
+      }
+      .ctl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 10px;
+      }
+      svg {
+        width: 100%;
+        height: auto;
+        max-width: 420px;
+        display: block;
+        margin: 0 auto;
+      }
+      .n circle {
+        fill: var(--card);
+        stroke: var(--line);
+        stroke-width: 2.5;
+      }
+      .n text {
+        fill: var(--ink);
+        font-weight: 800;
+        font-size: 18px;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .n.v circle {
+        fill: var(--soft);
+        stroke: var(--ac);
+      }
+      .n.cur circle {
+        fill: var(--ac);
+        stroke: var(--ac);
+      }
+      .n.cur text {
+        fill: var(--onac);
+      }
+      .n.odd circle {
+        stroke: var(--ac2);
+        stroke-width: 4;
+      }
+      .e {
+        stroke: var(--line);
+        stroke-width: 2.5;
+      }
+      .e.t {
+        stroke: var(--ac);
+        stroke-width: 4.5;
+      }
+      .e.now {
+        stroke: var(--ac2);
+        stroke-width: 6;
+      }
+      table {
+        border-collapse: collapse;
+        margin: 0 auto;
+      }
+      th,
+      td {
+        width: 38px;
+        height: 36px;
+        text-align: center;
+        border: 1px solid var(--line);
+        font-size: 0.95rem;
+      }
+      th {
+        color: var(--mut);
+        font-weight: 600;
+      }
+      td.c {
+        cursor: pointer;
+        user-select: none;
+      }
+      td.c.on {
+        background: var(--soft);
+        font-weight: 800;
+        color: var(--ac);
+      }
+      td.d {
+        background: repeating-linear-gradient(
+          45deg,
+          transparent 0 4px,
+          var(--line) 4px 5px
+        );
+      }
+      td.deg {
+        font-weight: 800;
+      }
+      td.deg.o {
+        color: var(--ac2);
+      }
+      .hint {
+        color: var(--mut);
+        font-size: 0.88rem;
+        text-align: center;
+        margin: 8px 0 0;
+      }
+      .say {
+        min-height: 3.2em;
+        font-weight: 600;
+        border-left: 5px solid var(--ac);
+        padding: 4px 10px;
+        margin: 12px 0;
+      }
+      .box {
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        min-height: 62px;
+      }
+      .box b {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--mut);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        min-width: 34px;
+        text-align: center;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: var(--soft);
+        border: 1px solid var(--ac);
+        font-weight: 800;
+      }
+      .chip.top {
+        background: var(--ac2);
+        border-color: var(--ac2);
+        color: var(--onac);
+      }
+      .verdict {
+        margin-top: 10px;
+        font-weight: 600;
+      }
+      table.t th,
+      table.t td {
+        width: auto;
+        height: auto;
+        padding: 6px 10px;
+        text-align: left;
+      }
+      table.t {
+        width: 100%;
+      }
+      details {
+        margin: 8px 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      pre {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px;
+        overflow-x: auto;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        margin: 8px 0;
+      }
+      ol,
+      ul {
+        margin: 6px 0 10px;
+        padding-left: 22px;
+      }
+      li {
+        margin: 3px 0;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .n circle {
+          transition:
+            fill 0.25s,
+            stroke 0.25s;
+        }
+        .e {
+          transition:
+            stroke 0.25s,
+            stroke-width 0.25s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Đồ thị trên bảng, chạy từng bước</h1>
+      <p class="lead">
+        Bấm Bước tiếp để xem thuật toán chạy. Bấm vào ô của ma trận để thêm hoặc
+        xóa cạnh và tự thử đồ thị khác.
+      </p>
+
+      <section class="card" aria-label="Trình minh họa">
+        <div class="row">
+          <div>
+            <svg
+              id="g"
+              viewBox="0 0 300 250"
+              role="img"
+              aria-label="Đồ thị 5 đỉnh"
+            ></svg>
+          </div>
+          <div>
+            <table id="m" aria-label="Ma trận kề"></table>
+            <p class="hint">
+              Ô sáng là 1, ô trống là 0. Cột cuối là bậc của đỉnh, màu cam là
+              bậc lẻ.
+            </p>
+            <p class="verdict" id="vd"></p>
+          </div>
+        </div>
+        <div class="ctl">
+          <span class="seg" role="group" aria-label="Chọn thuật toán">
+            <button data-m="dfs">DFS</button><button data-m="bfs">BFS</button
+            ><button data-m="eu">Euler</button>
+          </span>
+          <label id="sl"
+            >Đỉnh bắt đầu
+            <select id="st"></select
+          ></label>
+        </div>
+        <div class="ctl">
+          <button id="rs">Về đầu</button><button id="pv">Bước trước</button
+          ><button id="nx">Bước tiếp</button
+          ><button id="au">Chạy tự động</button>
+          <span id="ct" class="lead"></span>
+        </div>
+        <div class="say" id="say" aria-live="polite"></div>
+        <div class="row">
+          <div class="box" id="bA"></div>
+          <div class="box" id="bB"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Ma trận kề và file dothi.txt</h2>
+        <p>
+          Dòng đầu của file là số đỉnh n. Sau đó là n dòng, mỗi dòng n số 0 hoặc
+          1. Ô hàng i cột j bằng 1 nghĩa là đỉnh i có cạnh nối với đỉnh j.
+        </p>
+        <ul>
+          <li>Đồ thị vô hướng nên ma trận đối xứng: a[i,j] = a[j,i].</li>
+          <li>Đường chéo toàn 0, vì không có cạnh nối đỉnh với chính nó.</li>
+          <li>
+            Bậc của đỉnh i là tổng hàng i. Tổng cả ma trận bằng 2 lần số cạnh.
+          </li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Định lý Euler</h2>
+        <p>
+          Điều kiện đầu tiên là đồ thị liên thông (các đỉnh có cạnh đều đi tới
+          được nhau). Sau đó đếm số đỉnh bậc lẻ.
+        </p>
+        <table class="t">
+          <tr>
+            <th>Số đỉnh bậc lẻ</th>
+            <th>Kết luận</th>
+          </tr>
+          <tr>
+            <td>0</td>
+            <td>Có chu trình Euler, bắt đầu ở đỉnh nào cũng được</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>
+              Không có chu trình, có đường đi Euler. Bắt đầu ở một đỉnh lẻ, kết
+              thúc ở đỉnh lẻ còn lại
+            </td>
+          </tr>
+          <tr>
+            <td>4 trở lên</td>
+            <td>Không có cả hai</td>
+          </tr>
+        </table>
+        <p style="margin-top: 10px">
+          Đề chỉ hỏi chu trình thì chỉ chấp nhận trường hợp 0 đỉnh lẻ. Đây là
+          chỗ code mẫu ban đầu của bạn sai.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Ba thuật toán trong một nhìn</h2>
+        <details open>
+          <summary>DFS: đi sâu rồi quay lui (đệ quy hoặc stack)</summary>
+          <pre>
+DFS(v):
+  đánh dấu v, in v
+  với mỗi j kề v mà chưa thăm:
+      DFS(j)</pre
+          >
+        </details>
+        <details open>
+          <summary>BFS: thăm theo từng lớp (queue)</summary>
+          <pre>
+BFS(s):
+  đánh dấu s, cho s vào queue
+  khi queue chưa rỗng:
+      v = lấy đầu queue, in v
+      với mỗi j kề v mà chưa thăm:
+          đánh dấu j ngay, cho j vào queue</pre
+          >
+        </details>
+        <details open>
+          <summary>
+            Hierholzer: tìm chu trình hoặc đường đi Euler (stack)
+          </summary>
+          <pre>
+push start vào stack
+khi stack chưa rỗng:
+    v = đỉnh trên cùng
+    nếu v còn cạnh v-j:
+        xóa cạnh v-j, push j
+    ngược lại:
+        pop v, ghi v vào path
+đảo ngược path</pre
+          >
+        </details>
+        <p>
+          Cả ba đều O(n²) với ma trận kề và O(V + E) với danh sách kề. Kết quả
+          duyệt phụ thuộc thứ tự xét đỉnh kề, ở đây xét từ nhỏ đến lớn.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Làm bài thi theo thứ tự này</h2>
+        <ol>
+          <li>
+            Đọc file: ReadAllLines, dòng 0 là n, các dòng sau tách bằng Split
+            rồi int.Parse vào a[i,j].
+          </li>
+          <li>Viết hàm tính bậc, hàm duyệt DFS để kiểm tra liên thông.</li>
+          <li>Đếm số đỉnh bậc lẻ rồi đối chiếu bảng Euler ở trên.</li>
+          <li>
+            Chọn đỉnh bắt đầu (đỉnh lẻ nếu có 2 đỉnh lẻ), chạy Hierholzer trên
+            bản sao ma trận.
+          </li>
+          <li>
+            Đảo ngược path và in ra. Nhớ kiểm tra tay: đủ số cạnh, mỗi cạnh đúng
+            một lần.
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <script>
+      const N = 5,
+        P = [
+          [150, 34],
+          [250, 120],
+          [250, 215],
+          [50, 215],
+          [50, 120],
+        ];
+      let M = [
+        [0, 1, 0, 0, 1],
+        [1, 0, 1, 1, 1],
+        [0, 1, 0, 1, 1],
+        [0, 1, 1, 0, 1],
+        [1, 1, 1, 1, 0],
+      ];
+      let mode = "dfs",
+        start = 0,
+        S = [],
+        k = 0,
+        tm = null;
+      const key = (u, v) => (u < v ? u + "-" + v : v + "-" + u);
+      const nb = (v) => {
+        const r = [];
+        for (let j = 0; j < N; j++) if (M[v][j]) r.push(j);
+        return r;
+      };
+      const deg = (v) => nb(v).length;
+      function connected() {
+        let s = -1;
+        for (let i = 0; i < N; i++)
+          if (deg(i)) {
+            s = i;
+            break;
+          }
+        if (s < 0) return true;
+        const seen = [s],
+          q = [s];
+        while (q.length) {
+          const v = q.pop();
+          for (const j of nb(v))
+            if (!seen.includes(j)) {
+              seen.push(j);
+              q.push(j);
+            }
+        }
+        return [...Array(N).keys()].every((i) => !deg(i) || seen.includes(i));
+      }
+      const oddList = () => [...Array(N).keys()].filter((v) => deg(v) % 2);
+      function verdict() {
+        const o = oddList(),
+          c = connected();
+        if (!c)
+          return "Đồ thị không liên thông, nên không có chu trình lẫn đường đi Euler.";
+        if (o.length == 0) return "Mọi đỉnh bậc chẵn: có chu trình Euler.";
+        if (o.length == 2)
+          return (
+            "Hai đỉnh bậc lẻ (" +
+            o.join(" và ") +
+            "): không có chu trình Euler, có đường đi Euler."
+          );
+        return (
+          "Có " +
+          o.length +
+          " đỉnh bậc lẻ: không có chu trình Euler, cũng không có đường đi Euler."
+        );
+      }
+
+      function build() {
+        const out = [];
+        const snap = (t, cur, edge, vis, tree, A, B) =>
+          out.push({ t, cur, edge, vis: [...vis], tree: [...tree], A, B });
+        if (mode == "dfs") {
+          const vis = [],
+            o = [],
+            tr = [],
+            st = [];
+          const go = (v) => {
+            vis.push(v);
+            o.push(v);
+            st.push(v);
+            snap(
+              "Thăm đỉnh " + v + ": đánh dấu đã thăm và in ra.",
+              v,
+              null,
+              vis,
+              tr,
+              ["Ngăn xếp đệ quy", [...st]],
+              ["Thứ tự thăm", [...o]],
+            );
+            for (const j of nb(v))
+              if (!vis.includes(j)) {
+                tr.push(key(v, j));
+                snap(
+                  "Đỉnh " +
+                    v +
+                    " có đỉnh kề " +
+                    j +
+                    " chưa thăm, nên đi sâu sang " +
+                    j +
+                    ".",
+                  v,
+                  [v, j],
+                  vis,
+                  tr,
+                  ["Ngăn xếp đệ quy", [...st]],
+                  ["Thứ tự thăm", [...o]],
+                );
+                go(j);
+                snap(
+                  "Quay lui về đỉnh " + v + " để xét tiếp các đỉnh kề còn lại.",
+                  v,
+                  null,
+                  vis,
+                  tr,
+                  ["Ngăn xếp đệ quy", [...st]],
+                  ["Thứ tự thăm", [...o]],
+                );
+              }
+            st.pop();
+          };
+          go(start);
+          for (let i = 0; i < N; i++) if (!vis.includes(i)) go(i);
+          snap(
+            "Xong. Thứ tự DFS: " + o.join(", ") + ".",
+            -1,
+            null,
+            vis,
+            tr,
+            ["Ngăn xếp đệ quy", []],
+            ["Thứ tự thăm", [...o]],
+          );
+        } else if (mode == "bfs") {
+          const vis = [],
+            o = [],
+            tr = [],
+            q = [];
+          const run = (s) => {
+            vis.push(s);
+            q.push(s);
+            snap(
+              "Đánh dấu " + s + " và cho vào hàng đợi.",
+              s,
+              null,
+              vis,
+              tr,
+              ["Hàng đợi (vào sau, ra sau)", [...q]],
+              ["Thứ tự thăm", [...o]],
+            );
+            while (q.length) {
+              const v = q.shift();
+              o.push(v);
+              snap(
+                "Lấy " + v + " ra khỏi đầu hàng đợi và in ra.",
+                v,
+                null,
+                vis,
+                tr,
+                ["Hàng đợi (vào sau, ra sau)", [...q]],
+                ["Thứ tự thăm", [...o]],
+              );
+              for (const j of nb(v))
+                if (!vis.includes(j)) {
+                  vis.push(j);
+                  q.push(j);
+                  tr.push(key(v, j));
+                  snap(
+                    "Đỉnh kề " +
+                      j +
+                      " chưa thăm: đánh dấu ngay và cho vào cuối hàng đợi.",
+                    v,
+                    [v, j],
+                    vis,
+                    tr,
+                    ["Hàng đợi (vào sau, ra sau)", [...q]],
+                    ["Thứ tự thăm", [...o]],
+                  );
+                }
+            }
+          };
+          run(start);
+          for (let i = 0; i < N; i++) if (!vis.includes(i)) run(i);
+          snap(
+            "Xong. Thứ tự BFS: " + o.join(", ") + ".",
+            -1,
+            null,
+            vis,
+            tr,
+            ["Hàng đợi", []],
+            ["Thứ tự thăm", [...o]],
+          );
+        } else {
+          const o = oddList();
+          if (!connected() || o.length > 2) {
+            snap(
+              verdict() + " Thuật toán dừng ở đây.",
+              -1,
+              null,
+              [],
+              [],
+              ["Ngăn xếp", []],
+              ["Đường đi", []],
+            );
+            return out;
+          }
+          const s0 = o.length
+            ? o[0]
+            : ([...Array(N).keys()].find((i) => deg(i)) ?? 0);
+          const b = M.map((r) => [...r]),
+            st = [s0],
+            path = [],
+            used = [];
+          snap(
+            (o.length
+              ? "Có 2 đỉnh lẻ nên bắt buộc xuất phát từ một đỉnh lẻ: "
+              : "Mọi đỉnh bậc chẵn, xuất phát từ đỉnh ") +
+              s0 +
+              ". Đẩy " +
+              s0 +
+              " vào ngăn xếp.",
+            s0,
+            null,
+            [],
+            used,
+            ["Ngăn xếp", [...st]],
+            ["Đường đi (ghi ngược)", [...path]],
+          );
+          while (st.length) {
+            const v = st[st.length - 1];
+            let nx = -1;
+            for (let j = 0; j < N; j++)
+              if (b[v][j]) {
+                nx = j;
+                break;
+              }
+            if (nx < 0) {
+              path.push(v);
+              st.pop();
+              snap(
+                "Đỉnh " +
+                  v +
+                  " hết cạnh: lấy khỏi ngăn xếp và ghi vào đường đi.",
+                v,
+                null,
+                [],
+                used,
+                ["Ngăn xếp", [...st]],
+                ["Đường đi (ghi ngược)", [...path]],
+              );
+            } else {
+              b[v][nx] = b[nx][v] = 0;
+              used.push(key(v, nx));
+              st.push(nx);
+              snap(
+                "Đi theo cạnh " +
+                  v +
+                  "-" +
+                  nx +
+                  ", xóa cạnh này khỏi ma trận, đẩy " +
+                  nx +
+                  " vào ngăn xếp.",
+                nx,
+                [v, nx],
+                [],
+                used,
+                ["Ngăn xếp", [...st]],
+                ["Đường đi (ghi ngược)", [...path]],
+              );
+            }
+          }
+          const r = [...path].reverse();
+          snap(
+            "Đảo ngược đường đi: " +
+              r.join(" → ") +
+              ". Đây là " +
+              (o.length ? "đường đi" : "chu trình") +
+              " Euler.",
+            -1,
+            null,
+            [],
+            used,
+            ["Ngăn xếp", []],
+            ["Đường đi sau khi đảo", r],
+          );
+        }
+        return out;
+      }
+
+      function chips(a, top) {
+        return (
+          "<b>" +
+          a[0] +
+          '</b><div class="chips">' +
+          (a[1].length
+            ? a[1]
+                .map(
+                  (x, i) =>
+                    '<span class="chip' +
+                    (top && i == a[1].length - 1 ? " top" : "") +
+                    '">' +
+                    x +
+                    "</span>",
+                )
+                .join("")
+            : '<span class="lead">trống</span>') +
+          "</div>"
+        );
+      }
+      function drawGraph(s) {
+        const o = oddList();
+        let h = "";
+        for (let i = 0; i < N; i++)
+          for (let j = i + 1; j < N; j++)
+            if (M[i][j]) {
+              const kk = key(i, j),
+                now = s && s.edge && key(s.edge[0], s.edge[1]) == kk,
+                t = s && s.tree.includes(kk);
+              h +=
+                '<line class="e' +
+                (now ? " now" : t ? " t" : "") +
+                '" x1="' +
+                P[i][0] +
+                '" y1="' +
+                P[i][1] +
+                '" x2="' +
+                P[j][0] +
+                '" y2="' +
+                P[j][1] +
+                '"/>';
+            }
+        for (let i = 0; i < N; i++) {
+          const c = s && s.cur == i,
+            v = s && s.vis.includes(i);
+          h +=
+            '<g class="n' +
+            (c ? " cur" : v ? " v" : "") +
+            (mode == "eu" && o.includes(i) ? " odd" : "") +
+            '"><circle cx="' +
+            P[i][0] +
+            '" cy="' +
+            P[i][1] +
+            '" r="21"/><text x="' +
+            P[i][0] +
+            '" y="' +
+            P[i][1] +
+            '">' +
+            i +
+            "</text></g>";
+        }
+        document.getElementById("g").innerHTML = h;
+      }
+      function drawMatrix() {
+        let h = "<tr><th></th>";
+        for (let j = 0; j < N; j++) h += "<th>" + j + "</th>";
+        h += "<th>bậc</th></tr>";
+        for (let i = 0; i < N; i++) {
+          h += "<tr><th>" + i + "</th>";
+          for (let j = 0; j < N; j++)
+            h +=
+              i == j
+                ? '<td class="d"></td>'
+                : '<td class="c' +
+                  (M[i][j] ? " on" : "") +
+                  '" tabindex="0" role="button" aria-label="Ô ' +
+                  i +
+                  "," +
+                  j +
+                  '" data-i="' +
+                  i +
+                  '" data-j="' +
+                  j +
+                  '">' +
+                  (M[i][j] ? 1 : "") +
+                  "</td>";
+          h +=
+            '<td class="deg' +
+            (deg(i) % 2 ? " o" : "") +
+            '">' +
+            deg(i) +
+            "</td></tr>";
+        }
+        document.getElementById("m").innerHTML = h;
+        document.getElementById("vd").textContent = verdict();
+      }
+      function render() {
+        const s = S[k];
+        drawGraph(s);
+        document.getElementById("say").textContent = s
+          ? s.t
+          : "Chưa có bước nào.";
+        document.getElementById("bA").innerHTML = s ? chips(s.A, true) : "";
+        document.getElementById("bB").innerHTML = s ? chips(s.B, false) : "";
+        document.getElementById("ct").textContent =
+          "Bước " + (k + 1) + " / " + S.length;
+        document.getElementById("pv").disabled = k == 0;
+        document.getElementById("nx").disabled = k >= S.length - 1;
+        document
+          .querySelectorAll("[data-m]")
+          .forEach((b) => b.setAttribute("aria-pressed", b.dataset.m == mode));
+        document.getElementById("sl").style.display =
+          mode == "eu" ? "none" : "";
+      }
+      function reset() {
+        stop();
+        S = build();
+        k = 0;
+        drawMatrix();
+        render();
+      }
+      function stop() {
+        if (tm) {
+          clearInterval(tm);
+          tm = null;
+          document.getElementById("au").textContent = "Chạy tự động";
+        }
+      }
+      const sel = document.getElementById("st");
+      for (let i = 0; i < N; i++) sel.add(new Option("Đỉnh " + i, i));
+      sel.onchange = () => {
+        start = +sel.value;
+        reset();
+      };
+      document.querySelectorAll("[data-m]").forEach(
+        (b) =>
+          (b.onclick = () => {
+            mode = b.dataset.m;
+            reset();
+          }),
+      );
+      document.getElementById("rs").onclick = reset;
+      document.getElementById("pv").onclick = () => {
+        stop();
+        if (k > 0) {
+          k--;
+          render();
+        }
+      };
+      document.getElementById("nx").onclick = () => {
+        stop();
+        if (k < S.length - 1) {
+          k++;
+          render();
+        }
+      };
+      document.getElementById("au").onclick = () => {
+        if (tm) {
+          stop();
+          return;
+        }
+        if (k >= S.length - 1) k = 0;
+        document.getElementById("au").textContent = "Dừng";
+        render();
+        tm = setInterval(() => {
+          if (k < S.length - 1) {
+            k++;
+            render();
+          } else stop();
+        }, 1100);
+      };
+      function toggle(t) {
+        const c = t.closest("td.c");
+        if (!c) return;
+        const i = +c.dataset.i,
+          j = +c.dataset.j;
+        M[i][j] = M[j][i] = M[i][j] ? 0 : 1;
+        reset();
+      }
+      const mt = document.getElementById("m");
+      mt.onclick = (e) => toggle(e.target);
+      mt.onkeydown = (e) => {
+        if (e.key == "Enter" || e.key == " ") {
+          e.preventDefault();
+          toggle(e.target);
+        }
+      };
+      reset();
+    </script>
+  </body>
+</html>
